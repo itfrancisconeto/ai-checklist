@@ -1,0 +1,49 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      mcp:
+        condition: service_started
+      ollama:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5174:5174"
+    environment:
+      - VITE_API_URL=http://localhost:3001
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 5174
+    depends_on:
+      - backend
+
+  mcp:
+    build: ./mcp
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./mcp:/app
+      - /app/node_modules
+    command: npm run dev
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  ollama_data:
